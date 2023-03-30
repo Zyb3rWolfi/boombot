@@ -14,7 +14,7 @@ class queueCommands(commands.Cog):
     
     # Shows the current queue by copying the queue and then adding each song to an embed
     @queue.subcommand(description="Shows the current Queue")
-    async def list(self, interaction : nextcord.Interaction):
+    async def show(self, interaction : nextcord.Interaction):
         vc: wavelink.Player = interaction.guild.voice_client
         if not vc.queue.is_empty:
             em = nextcord.Embed(title="Queue") 
