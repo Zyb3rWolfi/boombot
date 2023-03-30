@@ -12,12 +12,17 @@ client = nextcord.Client()
 bot = commands.Bot(command_prefix=".", intents=intents)
 
 # All the cogs that will be loaded
-cogs = [
-    "cogs.events",
-    "cogs.play",
-    "cogs.queue",
-    "cogs.bot",
+extensions = [
+    'cogs.botcmd',
+    'cogs.events',
+    'cogs.play',
+    'cogs.queue'
         ]
+
+if __name__ == "__main__":
+    for ext in extensions:
+            print(f"Loading {ext}")
+            bot.load_extension(ext)
 
 # Just a list of songs to appear in the bot's status
 songs = [
@@ -28,11 +33,6 @@ songs = [
     "MOTTO - NF",
     "Right Now - Confetti",
 ]
-
-if __name__ == "__main__":
-    for cog in cogs:
-        print(f"Loading {cog}")
-        bot.load_extension(cog)
 
 # When the bot is ready, it will create a task to connect to the LavaLink Host
 @bot.event
@@ -51,4 +51,4 @@ async def on_node():
     await wavelink.NodePool.connect(client=bot, nodes=[node], spotify=sc)
     wavelink.Player.autoplay = True
 
-bot.run("MTA4MzgwMjUxMDg3NzI3ODM2OQ.G91aF-.u88maMdv0hVL4vZhiRE9OSWeHaBrUu6QbZ6Ud4")
+bot.run("")

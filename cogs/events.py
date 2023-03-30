@@ -20,5 +20,5 @@ class Events(commands.Cog):
 
             await vc.disconnect()
 
-def setup(bot):
+def setup(bot : commands.Bot):
     bot.add_cog(Events(bot))

@@ -40,7 +40,7 @@ class queueCommands(commands.Cog):
     
     # Removes a song from the queue
     @queue.subcommand(description="Removes a specific song from the queue")
-    async def remove(self, interaction : nextcord.Interaction, position : int):
+    async def remove(self,interaction : nextcord.Interaction, position : int):
 
         vc: wavelink.Player = interaction.guild.voice_client
         
@@ -62,5 +62,5 @@ class queueCommands(commands.Cog):
             await vc.queue.put_wait(song)
 
 
-def setup(bot):
+def setup(bot : commands.Bot):
     bot.add_cog(queueCommands(bot))

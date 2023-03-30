@@ -109,5 +109,5 @@ class playCommands(commands.Cog):
             print(vc.queue.loop)
             await interaction.response.send_message("Looping is turned on")
 
-def setup(bot):
+def setup(bot : commands.Bot):
     bot.add_cog(playCommands(bot))
