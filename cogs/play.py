@@ -94,10 +94,10 @@ class playCommands(commands.Cog):
 
         vc: wavelink.Player = interaction.guild.voice_client
 
-    try:        
-        await interaction.response.send_message(f"Currently Playing: {vc.current.title}")
-    except:
-        await interaction.response.send_message("Nothing is currently playing")
+        try:        
+            await interaction.response.send_message(f"Currently Playing: {vc.current.title}")
+        except:
+            await interaction.response.send_message("Nothing is currently playing")
 
     # Loops the current song
     @nextcord.slash_command(description="Loops a song")
