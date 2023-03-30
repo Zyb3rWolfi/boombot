@@ -43,21 +43,24 @@ class queueCommands(commands.Cog):
     async def remove(self,interaction : nextcord.Interaction, position : int):
 
         vc: wavelink.Player = interaction.guild.voice_client
-        
+
+        #This bit of code copys the queue object from the vc object then converts it to a list and removes the song from the list
         queue = vc.queue.copy()
-        new_queue = []
+        queue = list(queue)
 
-        # Loops through the queue and only adding songs which wasnt selected by the user
-        for song in queue:
-            
-            if (vc.queue[position - 1] != song):
+        query = await wavelink.YouTubeTrack.search(song, return_first=True)
 
-                new_queue.append(song)
-        
+        try:
+            queue.remove(query)
+            await interaction.response.send_message(f"Sucsessfully removed {query.title} {query.uri}!")
+
+        except:
+            await interaction.response.send_message("Song not found in queue!")
+
         vc.queue.clear()
 
-        # After clearing the queue, we loop through the new queue and assign the songs to the player queue
-        for song in new_queue:
+        # After clearing the queue, we loop through the queue and assign the songs to the player queue
+        for song in queue:
 
             await vc.queue.put_wait(song)
 
