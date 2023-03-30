@@ -13,12 +13,51 @@ class playCommands(commands.Cog):
     @nextcord.slash_command(description="Play a song")
     async def play(self, interaction : nextcord.Interaction, search : str):
 
-        if "https://open.spotify.com/track/" in search:
+        async def playSong(query, search):
+            if vc.queue.is_empty and not vc.is_playing():
 
-            query = await spotify.SpotifyTrack.search(search)
+                await vc.play(query)
+                if "https://open.spotify.com" in search:
+                    await interaction.response.send_message(f"Now Playing: {query.title}")
+                else:
+                    await interaction.response.send_message(f"Now Playing: {query.title} {query.uri}")
+                
+            else:
+                await vc.queue.put_wait(query)
+                await interaction.response.send_message(f"Added {query.title} To the Queue")
 
-        else:
-            query = await wavelink.YouTubeTrack.search(search, return_first=True)
+        try:
+            destination = interaction.user.voice.channel
+
+            if not interaction.guild.voice_client:
+
+                vc: wavelink.Player = await destination.connect(cls=wavelink.Player)
+
+            elif interaction.guild.voice_client:
+
+                vc: wavelink.Player = interaction.guild.voice_client  
+
+            if "https://open.spotify.com/playlist" in search:
+                async for track in spotify.SpotifyTrack.iterator(query=search):
+                    await vc.queue.put_wait(track)
+                
+                await vc.play(track, search)
+            elif "https://open.spotify.com/track" in search:
+                
+                query = await spotify.SpotifyTrack.search(search)
+                await playSong(query, search)
+
+            else:
+
+                query = await wavelink.YouTubeTrack.search(search, return_first=True)
+                await playSong(query)
+                await interaction.response.send_message(f"Added {track.title} To the Queue")
+                
+        except:
+            await interaction.response.send_message("Join a VC First!")
+
+    @nextcord.slash_command(guild_ids=[708632631901683723])
+    async def spotify(self, interaction : nextcord.Interaction, search : str):
 
         try:
             destination = interaction.user.voice.channel
@@ -28,17 +67,15 @@ class playCommands(commands.Cog):
                 vc: wavelink.Player = await destination.connect(cls=wavelink.Player)
             elif interaction.guild.voice_client:
 
-                vc: wavelink.Player = interaction.guild.voice_client  
+                vc: wavelink.Player = interaction.guild.voice_client 
         except:
             await interaction.response.send_message("Join a VC First!")
-        if vc.queue.is_empty and not vc.is_playing():
 
-            await vc.play(query)
-            await interaction.response.send_message(f"Now Playing {query.title} {query.uri}")
-            
-        else:
-            await vc.queue.put_wait(query)
-            await interaction.response.send_message(f"Added {query.title} To the Queue")
+        async for track in spotify.SpotifyTrack.iterator(query=search):
+            await vc.queue.put_wait(track)
+        
+        
+        await vc.play(track)
     
     # Skips the current song by stopping it and then "on_wavelink_track_end" starts the next song
     # Wont skip the song if either the queue is empty or if loop is on
