@@ -18,13 +18,19 @@ class queueCommands(commands.Cog):
         vc: wavelink.Player = interaction.guild.voice_client
         if not vc.queue.is_empty:
             em = nextcord.Embed(title="Queue") 
+            em.add_field(name=f"Now Playing", value=f"{vc.current.title}", inline=False)
             queue = vc.queue.copy()
             songs = []
             song_count = 0
             for song in queue:
                 song_count += 1
                 songs.append(song)
-                em.add_field(name=f"[{song_count}] Duration {song.duration}", value=f"{song.title}", inline=False)
+                if song_count == 1:
+                    em.add_field(name=f"Up Next", value=f"`[{song_count}]` {song.title}", inline=False)
+                
+                else:
+
+                    em.add_field(name="", value=f"`[{song_count}]` {song.title} [{round((song.duration / 1000) / 60, 2)}]", inline=False)
 
             await interaction.response.send_message(embed=em)
         else:
