@@ -24,6 +24,15 @@ def whatsPlaying(vc):
 
     return embed
 
+def whatsPlayingSpotify(song, vc):
+
+    embed = nextcord.Embed(title=f"{song.title}")
+    embed.add_field(name="Channel", value=vc.channel.name, inline=True)
+    embed.add_field(name="Duration", value=round((vc.current.duration / 1000) / 60, 2), inline=True)
+    embed.set_author(name="Currently Playing")
+
+    return embed
+
 # Help Command
 def helpCommand():
     

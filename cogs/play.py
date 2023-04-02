@@ -28,15 +28,18 @@ class playCommands(commands.Cog):
                         await interaction.guild.voice_client.move_to(destination)
                         
                 vc: wavelink.Player = interaction.guild.voice_client  
-            
-            
+
             if "https://open.spotify.com/playlist" in search:
                 print("Playlist Detected")
                 async for track in spotify.SpotifyTrack.iterator(query=search):
                     await vc.queue.put_wait(track)
+
+                if not vc.is_playing():
                     
-                await vc.play(track)
+                    await vc.play(track)
+                
                 await interaction.response.send_message(f"Playlist Added To Queue")
+                return
                 
             elif "https://open.spotify.com/track" in search:
 
@@ -135,6 +138,13 @@ class playCommands(commands.Cog):
             vc.queue.loop = True
             print(vc.queue.loop)
             await interaction.response.send_message("Looping is turned on")
+    
+    @nextcord.slash_command(description="Replays the current song")
+    async def replay(self, interaction : nextcord.Interaction):
+
+        vc: wavelink.Player = interaction.guild.voice_client
+        await vc.play(vc.current)
+        await interaction.response.send_message("Replaying the current song")
         
 
 def setup(bot : commands.Bot):
