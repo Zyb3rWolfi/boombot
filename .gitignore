@@ -102,3 +102,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+cogs/__pycache__/bot.cpython-311.pyc
+*.pyc
+*.pyc
+cogs/__pycache__/bot.cpython-311.pyc
+cogs/__pycache__/events.cpython-311.pyc
+cogs/__pycache__/play.cpython-311.pyc
+cogs/__pycache__/queue.cpython-311.pyc
