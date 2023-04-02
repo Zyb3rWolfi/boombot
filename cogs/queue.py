@@ -1,6 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 import wavelinkcord as wavelink
+import cogs.embeds as embeds
 
 class queueCommands(commands.Cog):
     def __init__(self, bot):
@@ -69,6 +70,33 @@ class queueCommands(commands.Cog):
         for song in queue:
 
             await vc.queue.put_wait(song)
+    
+    # Skips to a specific song in the queue by first copying the queue, converting it to a list and then looping through the list until it finds the song
+    # Then it plays the song and removes it from the list and then clears the queue and adds the songs back to the queue
+    @queue.subcommand(description="Removes a specific song from the queue")
+    async def skipto(self, interaction : nextcord.Interaction, song_name : str):
+
+        vc: wavelink.Player = interaction.guild.voice_client
+
+        query = await wavelink.YouTubeTrack.search(song_name, return_first=True)
+        queue = vc.queue.copy()
+        queue = list(queue)
+
+        for song in queue:
+
+            if song.uri == query.uri:
+                await vc.play(song)
+                queue.remove(song)
+                embed = embeds.playEmbed(song, vc)
+                await interaction.response.send_message(embed=embed)
+                break
+        
+        vc.queue.clear()
+
+        for song in queue:
+
+            await vc.queue.put_wait(song)
+        
 
 
 def setup(bot : commands.Bot):
