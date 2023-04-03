@@ -1,6 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 import wavelinkcord as wavelink
+import cogs.embeds as embeds
 
 class BotCommands(commands.Cog):
 
@@ -16,6 +17,12 @@ class BotCommands(commands.Cog):
         em.add_field(name=f"Creator", value="Zyb3rWolfi", inline=False)
 
         await interaction.response.send_message(embed=em)
+    
+    @nextcord.slash_command(name="help", description="Display the list of commands")
+    async def help(self, interaction : nextcord.Interaction):
+
+        embed = embeds.helpCommand()
+        await interaction.response.send_message(embed=embed)
 
 def setup(bot : commands.Bot):
     print("Bot Commands Loaded")
