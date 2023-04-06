@@ -1,6 +1,11 @@
 import nextcord
 from nextcord.ext import commands, tasks
 import wavelinkcord as wavelink
+import sqlite3
+
+database = sqlite3.connect('database.db')
+cursor = database.cursor()
+
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -29,6 +34,20 @@ class Events(commands.Cog):
         if vc.queue.loop == True:
 
             await vc.play(i.track)
+    
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        
+        query = "INSERT INTO guilds VALUES (?,?)"
+        cursor.execute(query, (guild.id, 0))
+        database.commit()
+    
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        
+        query = "DELETE FROM guilds WHERE guild_id = ?"
+        cursor.execute(query, (guild.id,))
+        database.commit()
 
 def setup(bot : commands.Bot):
     bot.add_cog(Events(bot))
