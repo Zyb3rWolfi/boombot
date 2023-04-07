@@ -3,6 +3,7 @@ from nextcord.ext import commands
 import wavelinkcord as wavelink
 import cogs.embeds as embeds
 from wavelinkcord.ext import spotify
+from cogs.dj import djCommands as dj
 
 class queueCommands(commands.Cog):
     def __init__(self, bot):
@@ -41,74 +42,81 @@ class queueCommands(commands.Cog):
     # Clears the queue using the clear method
     @queue.subcommand(description="Clears the Queue")
     async def clear(self, interaction : nextcord.Interaction):
-
-        vc: wavelink.Player = interaction.guild.voice_client
-        vc.queue.clear()
-        await interaction.response.send_message("The Queue Has Been Cleared")
+        async def clear():
+            vc: wavelink.Player = interaction.guild.voice_client
+            vc.queue.clear()
+            await interaction.response.send_message("The Queue Has Been Cleared")
+        
+        await dj.djCheck(self, interaction, clear)
     
     # Removes a song from the queue
     @queue.subcommand(description="Removes a specific song from the queue")
     async def remove(self,interaction : nextcord.Interaction, song : str):
 
-        vc: wavelink.Player = interaction.guild.voice_client
+        async def remove():
 
-        #This bit of code copys the queue object from the vc object then converts it to a list and removes the song from the list
-        queue = vc.queue.copy()
-        queue = list(queue)
+            vc: wavelink.Player = interaction.guild.voice_client
 
-        decoded = spotify.decode_url(song)
-        if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
-            query = await wavelink.YouTubeTrack.search(song, return_first=True)
-        else:
-            query = await spotify.SpotifyTrack.search(song)
+            #This bit of code copys the queue object from the vc object then converts it to a list and removes the song from the list
+            queue = vc.queue.copy()
+            queue = list(queue)
 
-        try:
-            queue.remove(query)
-            await interaction.response.send_message(f"Sucsessfully removed {query.title} {query.uri}!")
+            decoded = spotify.decode_url(song)
+            if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
+                query = await wavelink.YouTubeTrack.search(song, return_first=True)
+            else:
+                query = await spotify.SpotifyTrack.search(song)
 
-        except:
-            await interaction.response.send_message("Song not found in queue!")
+            try:
+                queue.remove(query)
+                await interaction.response.send_message(f"Sucsessfully removed {query.title} {query.uri}!")
 
-        vc.queue.clear()
+            except:
+                await interaction.response.send_message("Song not found in queue!")
 
-        # After clearing the queue, we loop through the queue and assign the songs to the player queue
-        for song in queue:
+            vc.queue.clear()
 
-            await vc.queue.put_wait(song)
+            # After clearing the queue, we loop through the queue and assign the songs to the player queue
+            for song in queue:
+
+                await vc.queue.put_wait(song)
+        
+        await dj.djCheck(self, interaction, remove)
 
     
     # Skips to a specific song in the queue
     @queue.subcommand(description="Removes a specific song from the queue")
     async def skipto(self, interaction : nextcord.Interaction, song_name : str):
 
-        vc: wavelink.Player = interaction.guild.voice_client
+        async def skipto():
+            vc: wavelink.Player = interaction.guild.voice_client
 
-        decoded = spotify.decode_url(song_name)
-        if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
+            decoded = spotify.decode_url(song_name)
+            if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
 
-            query = await wavelink.YouTubeTrack.search(song_name, return_first=True)
-            embed = embeds.playEmbed(query, vc)
+                query = await wavelink.YouTubeTrack.search(song_name, return_first=True)
+                embed = embeds.playEmbed(query, vc)
 
-        else:
-            query = await spotify.SpotifyTrack.search(song_name)
-            embed = embeds.whatsPlayingSpotify(query, vc)
+            else:
+                query = await spotify.SpotifyTrack.search(song_name)
+                embed = embeds.whatsPlayingSpotify(query, vc)
 
-        queue = vc.queue.copy()
-        queue = list(queue)
+            queue = vc.queue.copy()
+            queue = list(queue)
 
-        for song in queue:
-            if song.uri == query.uri:
-                await vc.play(song)
-                queue.remove(song)
-                await interaction.response.send_message(embed=embed)
-                break
-        
-        vc.queue.clear()
-
-        for song in queue:
-            await vc.queue.put_wait(song)
-
+            for song in queue:
+                if song.uri == query.uri:
+                    await vc.play(song)
+                    queue.remove(song)
+                    await interaction.response.send_message(embed=embed)
+                    break
             
+            vc.queue.clear()
+
+            for song in queue:
+                await vc.queue.put_wait(song)
+        
+        await dj.djCheck(self, interaction, skipto)
             
 def setup(bot : commands.Bot):
     bot.add_cog(queueCommands(bot))

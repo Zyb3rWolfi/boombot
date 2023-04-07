@@ -2,6 +2,12 @@ import nextcord
 from nextcord.ext import commands
 import wavelinkcord as wavelink
 import cogs.embeds as embeds
+import sqlite3
+
+database = sqlite3.connect('database.db')
+cursor = database.cursor()
+
+# This is mainly utility commands for the bot like checking the latency, amount of servers, etc.
 
 class BotCommands(commands.Cog):
 
@@ -23,6 +29,31 @@ class BotCommands(commands.Cog):
 
         embed = embeds.helpCommand()
         await interaction.response.send_message(embed=embed)
+
+    @nextcord.slash_command(name="amount", description="Check the amount of servers the bot is in")
+    async def amount(self, interaction : nextcord.Interaction):
+
+        await interaction.response.send_message(f"I am in {len(self.bot.guilds)} servers")
+    
+    @nextcord.slash_command(name="ping", description="Check the bot's latency")
+    async def ping(self, interaction : nextcord.Interaction):
+            
+            await interaction.response.send_message(f"Pong! {round(self.bot.latency * 1000)}ms")
+    
+    @nextcord.slash_command(name="update", description="Updates Database", guild_ids=[708632631901683723])
+    async def update(self, interaction : nextcord.Interaction):
+
+        query = "SELECT * FROM guilds WHERE guild_id = ?"
+        guilds = self.bot.guilds
+
+        if cursor.execute(query, (interaction.guild.id,)).fetchone() == None:
+             
+            query = "INSERT INTO guilds VALUES (?,?,?)"
+            cursor.execute(query, (interaction.guild.id, 0, 0))
+        
+        database.commit()
+        await interaction.response.send_message("Database Updated")
+    
 
 def setup(bot : commands.Bot):
     print("Bot Commands Loaded")

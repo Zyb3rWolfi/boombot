@@ -47,6 +47,13 @@ def helpCommand():
     embed.add_field(name="`/queue remove`", value="Removes a song from the queue", inline=False)
     embed.add_field(name="`/queue skipto`", value="Skips to a specific song in the queue", inline=False)
     embed.add_field(name="`/whatsplaying`", value="Shows the current song", inline=False)
+    embed.add_field(name="`/dj add`", value="Adds a DJ", inline=False)
+    embed.add_field(name="`/dj remove`", value="Removes a DJ", inline=False)
+    embed.add_field(name="`/dj list`", value="Shows a list of DJs", inline=False)
+    embed.add_field(name="`/dj mode`", value="Enable or disable DJ only mode", inline=False)
+    embed.add_field(name="`/shuffle`", value="Shuffles the songs in the queue", inline=False)
+    embed.add_field(name="`/ping`", value="Shows the Bots Latency", inline=False)
+    embed.add_field(name="`/amount`", value="Shows the amount of guilds the bot is in", inline=False)
     embed.add_field(name="`/help`", value="Shows this message", inline=False)
     embed.set_footer(text="Made by @Zyb3rWolfi#3614")
 
