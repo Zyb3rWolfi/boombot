@@ -75,7 +75,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx, error):
 
-        await ctx.send(f"`Error` : {error}")
+        if isinstance(error, application_checks.ApplicationMissingPermissions):
+            await ctx.send(f"`Error` : {error}")
         
     
     @nextcord.slash_command()
