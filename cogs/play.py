@@ -4,37 +4,27 @@ import wavelinkcord as wavelink
 from wavelinkcord.ext import spotify
 import cogs.embeds as embeds
 import sqlite3
+import random
+from cogs.dj import djCommands as dj
 
 database = sqlite3.connect('database.db')
 cursor = database.cursor()
+
+# Add a way to load DJ commands and unload normal ones vice versa to improve overall performance of the Discord Bot
+# since a the moment we have a lot of repetitve For loops!
 
 class playCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-    
-    def getDjs(self, interaction):
-
-        query = "SELECT dj_id FROM dj WHERE guild_id = ?"
-        djs = cursor.execute(query, (interaction.guild.id,)).fetchall()
-
-        return djs
-
-    def getDjMode(self, interaction):
-
-        djCheck = "SELECT dj_mode FROM guilds WHERE guild_id = ?"
-        djMode = cursor.execute(djCheck, (interaction.guild.id,)).fetchone()
-
-        return djMode
+        
+    global shuffle_Toggle
+    shuffle_Toggle = False
 
     # Plays a song from Youtube or Spotify
     # Spotify is played when the bot detects a spotify link since it beggins with "https://open.spotify.com/track/"
     @nextcord.slash_command(description="Play a song")
     async def play(self, interaction : nextcord.Interaction, search : str):
-
-        djs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
-        print(djs, djMode)
         
         async def play():
             try:
@@ -88,17 +78,7 @@ class playCommands(commands.Cog):
             except:
                 await interaction.response.send_message("Join a VC First!")
 
-        for member in djs:
-             
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await play()
-                return
-            
-        if djMode[0] == 0:
-            await play()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, play)
 
     
     # Skips the current song by stopping it and then "on_wavelink_track_end" starts the next song
@@ -121,19 +101,7 @@ class playCommands(commands.Cog):
 
                 await interaction.response.send_message("Cant Skip! There is nothing in the Queue")
 
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
-
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await skip()
-                return
-        
-        if djMode[0] == 0:
-            await skip()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, skip)
     
     # Disconnects the bot from the VC
     @nextcord.slash_command(description="Disconnects the bot from a VC")
@@ -143,20 +111,8 @@ class playCommands(commands.Cog):
             vc: wavelink.Player = interaction.guild.voice_client
             await vc.disconnect()
             await interaction.response.send_message("Disconnected the Bot")
-        
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
 
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await disconnect()
-                return
-        
-        if djMode[0] == 0:
-            await disconnect()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, disconnect)
 
     # Pauses the current playing song
     @nextcord.slash_command(description="Pause a song")#
@@ -171,17 +127,7 @@ class playCommands(commands.Cog):
             except:
                 await interaction.response.send_message("Song is already Pasued!")
         
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
-
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await pause()
-                return
-        
-        if djMode[0] == 0:
-            await pause()
-            return
+        await dj.djCheck(self, interaction, pause)
 
     # Resumes the current song
     @nextcord.slash_command(description="Pause a song")
@@ -195,19 +141,7 @@ class playCommands(commands.Cog):
             except:
                 await interaction.response.send_message("Song is already resumed!")
 
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
-
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await resume()
-                return
-        
-        if djMode[0] == 0:
-            await resume()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, resume)
 
     # Shows what song is currently playing
     @nextcord.slash_command(description="Shows what currently playing")
@@ -237,19 +171,7 @@ class playCommands(commands.Cog):
                 print(vc.queue.loop)
                 await interaction.response.send_message("Looping is turned on")
 
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
-
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await loop()
-                return
-        
-        if djMode[0] == 0:
-            await loop()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, loop)
     
     @nextcord.slash_command(description="Replays the current song")
     async def replay(self, interaction : nextcord.Interaction):
@@ -258,20 +180,30 @@ class playCommands(commands.Cog):
             vc: wavelink.Player = interaction.guild.voice_client
             await vc.play(vc.current)
             await interaction.response.send_message("Replaying the current song")
-        
-        getDjs = self.getDjs(interaction)
-        djMode = self.getDjMode(interaction)
 
-        for member in getDjs:
-            if member[0] == interaction.user.id or djMode[0] == 0:
-                await replay()
-                return
+        await dj.djCheck(self, interaction, replay)
+    
+    @nextcord.slash_command(description="Shuffles the songs in the queue")
+    async def shuffle(self, interaction : nextcord.Interaction):
+
+        vc : wavelink.Player = interaction.guild.voice_client
+
+        query = "SELECT SHUFFLE FROM guilds WHERE guild_id = ?"
+        shuffle_status = cursor.execute(query, (interaction.guild.id,)).fetchone()
+
+        async def shuffle():
+            if shuffle_status[0] == 0:
+                await interaction.response.send_message("Shuffling the queue")
+                cursor.execute("UPDATE guilds SET shuffle = ? WHERE guild_id = ?", (True, interaction.guild.id,))
+                database.commit()
+                
+            else:
+                await interaction.response.send_message("Unshuffling the queue")
+                cursor.execute("UPDATE guilds SET shuffle = ? WHERE guild_id = ?", (False, interaction.guild.id,))
+                database.commit()
+    
         
-        if djMode[0] == 0:
-            await replay()
-            return
-        else:
-            await interaction.response.send_message("You are not a DJ!")
+        await dj.djCheck(self, interaction, shuffle)
         
 
 def setup(bot : commands.Bot):

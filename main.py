@@ -9,9 +9,9 @@ import sqlite3
 database = sqlite3.connect('database.db')
 cursor = database.cursor()
 database.execute("CREATE TABLE IF NOT EXISTS dj (guild_id INTEGER, dj_id INTEGER)")
-database.execute("CREATE TABLE IF NOT EXISTS guilds(guild_id INTEGER, dj_mode BOOLEAN)")
+database.execute("CREATE TABLE IF NOT EXISTS guilds(guild_id INTEGER, dj_mode BOOLEAN, shuffle BOOLEAN)")
 
-bot_version = "1.0.0"
+bot_version = "1.5.0"
 
 intents = nextcord.Intents.all()
 client = nextcord.Client()
@@ -56,7 +56,7 @@ async def on_node():
         )
     node: wavelink.Node = wavelink.Node(uri='http://lavalink.clxud.pro:2333', password='youshallnotpass')
     await wavelink.NodePool.connect(client=bot, nodes=[node], spotify=sc)
-    wavelink.Player.autoplay = True
+
 
 @bot.command()
 async def test(ctx):
