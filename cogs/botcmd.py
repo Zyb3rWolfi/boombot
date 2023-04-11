@@ -46,13 +46,14 @@ class BotCommands(commands.Cog):
         query = "SELECT * FROM guilds WHERE guild_id = ?"
         guilds = self.bot.guilds
 
-        if cursor.execute(query, (interaction.guild.id,)).fetchone() == None:
-             
+        for guild in guilds:
+            print(guild.id)
+
             query = "INSERT INTO guilds VALUES (?,?,?)"
-            cursor.execute(query, (interaction.guild.id, 0, 0))
-        
-        database.commit()
-        await interaction.response.send_message("Database Updated")
+            cursor.execute(query, (guild.id, 0, 0,))
+            database.commit()
+
+            await interaction.send("Database Updated")
     
 
 def setup(bot : commands.Bot):

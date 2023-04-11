@@ -15,14 +15,12 @@ class Events(commands.Cog):
     
     # Checks if the bot is alone in a voice channel and if it is it will disconnect every 10 seconds
     @tasks.loop(seconds=10)
-    async def check_member(self):
+    async def check_member(self):  
 
         for vc in self.bot.voice_clients:
             if len(vc.channel.members) == 1:
                 if vc.channel.members[0].id == self.bot.user.id:
                     await vc.disconnect()
-                    self.check_member.stop()
-                    return
 
 
         
@@ -38,7 +36,7 @@ class Events(commands.Cog):
         # Checks if shuffling is enabled and if so, random.choice a song frm the queue and then remove it.
         # Had to disable auto play because it would send the bot into a loop
 
-        if loop[0] == 1:
+        if loop[0] == 1: # If shuffle enabled
 
             queue = vc.queue.copy()
             queue = list(queue)
@@ -51,11 +49,14 @@ class Events(commands.Cog):
 
             for song in queue:
                 await vc.queue.put_wait(song)
-        elif vc.queue.loop == False:
+
+        elif vc.queue.loop == False and not vc.queue.is_empty: # Play next song in queue
 
             populate = len(vc.auto_queue) < vc._auto_threshold
             await vc.play(vc.queue.get(), populate=populate)
-        else:
+
+        elif vc.queue.loop == True:
+             # If loop is on
             await vc.play(i.track)
     
     @commands.Cog.listener()
@@ -75,7 +76,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx, error):
 
-        await ctx.send(f"`Error` : {error}")
+        if isinstance(error, application_checks.ApplicationMissingPermissions):
+            await ctx.send(f"`Error` : {error}")
         
     
     @nextcord.slash_command()

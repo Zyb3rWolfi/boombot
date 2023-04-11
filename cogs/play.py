@@ -10,9 +10,6 @@ from cogs.dj import djCommands as dj
 database = sqlite3.connect('database.db')
 cursor = database.cursor()
 
-# Add a way to load DJ commands and unload normal ones vice versa to improve overall performance of the Discord Bot
-# since a the moment we have a lot of repetitve For loops!
-
 class playCommands(commands.Cog):
 
     def __init__(self, bot):
@@ -204,7 +201,20 @@ class playCommands(commands.Cog):
     
         
         await dj.djCheck(self, interaction, shuffle)
-        
+
+    @nextcord.slash_command(description="Seeks a song in seconds")
+    async def seek(self, interaction : nextcord.Interaction, seconds : int):
+
+        vc: wavelink.Player = interaction.guild.voice_client
+        await vc.seek(seconds * 1000)
+        await interaction.response.send_message(f"Seeked to {seconds} seconds")
+    
+    @nextcord.slash_command(description="Rewinds a song in seconds")
+    async def rewind(self, interaction : nextcord.Interaction, seconds : int):
+            
+            vc: wavelink.Player = interaction.guild.voice_client
+            await vc.seek(vc.position - (seconds * 1000))
+            await interaction.response.send_message(f"Rewinded {seconds} seconds")
 
 def setup(bot : commands.Bot):
     bot.add_cog(playCommands(bot))

@@ -11,11 +11,21 @@ cursor = database.cursor()
 database.execute("CREATE TABLE IF NOT EXISTS dj (guild_id INTEGER, dj_id INTEGER)")
 database.execute("CREATE TABLE IF NOT EXISTS guilds(guild_id INTEGER, dj_mode BOOLEAN, shuffle BOOLEAN)")
 
-bot_version = "1.5.0"
+bot_version = "1.0.0"
 
 intents = nextcord.Intents.all()
 client = nextcord.Client()
 bot = commands.Bot(command_prefix=".", intents=intents)
+
+# TO DO LIST
+# 
+# - Adding filters to the bot
+# - Add a feature to seek songs
+# - Soundcloud support?
+# - Looping queues not just songs
+# - Vote skipping perhaps
+# - Rewind songs
+# - Youtube playlist support
 
 # All the cogs that will be loaded
 extensions = [
@@ -24,6 +34,7 @@ extensions = [
     'cogs.play',
     'cogs.queue',
     'cogs.dj',
+    'cogs.filters',
         ]
 
 if __name__ == "__main__":
@@ -64,4 +75,4 @@ async def test(ctx):
 
 
 
-bot.run("")
+bot.run("MTA5MTg3NDU1MjE3MjI0OTE5OQ.G2cRA3.m1eRmyayXy_c_xAkbNN8o5EZa-ia1b0HLzWqw8")
