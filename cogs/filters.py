@@ -1,6 +1,6 @@
 import nextcord
 from nextcord.ext import commands
-import wavelinkcord as wavelink
+import wavelink as wavelinkcord
 
 class filterCommands(commands.Cog):
 
@@ -18,11 +18,12 @@ class filterCommands(commands.Cog):
         )
         ):
 
-        vc : wavelink.Player = interaction.guild.voice_client
+        vc : wavelinkcord.Player = interaction.guild.voice_client
         
         if filters == 1:
-            
+            print("Karaoke")
             await interaction.response.send_message("Filter set to Karaoke")
+            vc.set_filter(wavelinkcord.Filter.karaoke)
             
         elif filters == 2:
 

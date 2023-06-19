@@ -1,10 +1,10 @@
 import nextcord
 from nextcord.ext import commands
-from nextcord.shard import EventItem
-import wavelinkcord as wavelink
+import wavelink as wavelink
+from wavelink.ext import spotify
 import random
-from wavelinkcord.ext import spotify
 import sqlite3
+import os
 
 database = sqlite3.connect('database.db')
 cursor = database.cursor()
@@ -20,12 +20,9 @@ bot = commands.Bot(command_prefix=".", intents=intents)
 # TO DO LIST
 # 
 # - Adding filters to the bot
-# - Add a feature to seek songs
 # - Soundcloud support?
 # - Looping queues not just songs
 # - Vote skipping perhaps
-# - Rewind songs
-# - Youtube playlist support
 
 # All the cogs that will be loaded
 extensions = [
@@ -35,6 +32,7 @@ extensions = [
     'cogs.queue',
     'cogs.dj',
     'cogs.filters',
+    'cogs.skip',
         ]
 
 if __name__ == "__main__":
@@ -65,14 +63,8 @@ async def on_node():
             client_id='ae86a2b160874edf9dbb6b69995b74a8',
             client_secret='d470e67805824350b4c778554ed89a12'
         )
-    node: wavelink.Node = wavelink.Node(uri='http://lavalink.clxud.pro:2333', password='youshallnotpass')
+    node: wavelink.Node = wavelink.Node(uri='lavalink.devamop.in', password='DevamOP')
     await wavelink.NodePool.connect(client=bot, nodes=[node], spotify=sc)
 
 
-@bot.command()
-async def test(ctx):
-    await ctx.send("Test")
-
-
-
-bot.run("MTA5MTg3NDU1MjE3MjI0OTE5OQ.G2cRA3.m1eRmyayXy_c_xAkbNN8o5EZa-ia1b0HLzWqw8")
+bot.run(os.environ['BOT_TOKEN'])
