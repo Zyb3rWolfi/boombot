@@ -1,6 +1,6 @@
 import nextcord
 from nextcord.ext import commands, tasks
-import wavelinkcord as wavelink
+import wavelink as wavelinkcord
 import sqlite3
 import random
 from nextcord.ext import application_checks
@@ -29,7 +29,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, i):
 
-        vc: wavelink.Player = i.player
+        vc: wavelinkcord.Player = i.player
         query = "SELECT shuffle FROM guilds WHERE guild_id = ?"
         loop = cursor.execute(query, (vc.guild.id,)).fetchone()
 
@@ -83,7 +83,7 @@ class Events(commands.Cog):
     @nextcord.slash_command()
     async def autoplay(self, interaction):
 
-        vc : wavelink.Player = interaction.guild.voice_client
+        vc : wavelinkcord.Player = interaction.guild.voice_client
         print(vc.autoplay)
 
 def setup(bot : commands.Bot):

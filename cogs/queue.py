@@ -1,9 +1,10 @@
 import nextcord
 from nextcord.ext import commands
-import wavelinkcord as wavelink
+import wavelink as wavelinkcord
 import cogs.embeds as embeds
-from wavelinkcord.ext import spotify
+from wavelink.ext import spotify
 from cogs.dj import djCommands as dj
+
 
 class queueCommands(commands.Cog):
     def __init__(self, bot):
@@ -18,7 +19,7 @@ class queueCommands(commands.Cog):
     # Shows the current queue by copying the queue and then adding each song to an embed
     @queue.subcommand(description="Shows the current Queue")
     async def show(self, interaction : nextcord.Interaction):
-        vc: wavelink.Player = interaction.guild.voice_client
+        vc: wavelinkcord.Player = interaction.guild.voice_client
         if not vc.queue.is_empty:
             em = nextcord.Embed(title="Queue") 
             em.add_field(name=f"Now Playing", value=f"{vc.current.title}", inline=False)
@@ -43,7 +44,7 @@ class queueCommands(commands.Cog):
     @queue.subcommand(description="Clears the Queue")
     async def clear(self, interaction : nextcord.Interaction):
         async def clear():
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             vc.queue.clear()
             await interaction.response.send_message("The Queue Has Been Cleared")
         
@@ -55,7 +56,7 @@ class queueCommands(commands.Cog):
 
         async def remove():
 
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
 
             #This bit of code copys the queue object from the vc object then converts it to a list and removes the song from the list
             queue = vc.queue.copy()
@@ -63,7 +64,7 @@ class queueCommands(commands.Cog):
 
             decoded = spotify.decode_url(song)
             if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
-                query = await wavelink.YouTubeTrack.search(song, return_first=True)
+                query = await wavelinkcord.YouTubeTrack.search(song, return_first=True)
             else:
                 query = await spotify.SpotifyTrack.search(song)
 
@@ -89,21 +90,26 @@ class queueCommands(commands.Cog):
     async def skipto(self, interaction : nextcord.Interaction, song_name : str):
 
         async def skipto():
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
 
             decoded = spotify.decode_url(song_name)
+            # This checks if the song is a spotify song, if no then searches on youtube
             if not decoded or decoded['type'] is not spotify.SpotifySearchType.track:
 
-                query = await wavelink.YouTubeTrack.search(song_name, return_first=True)
+                query: list[wavelinkcord.YouTubeMusicTrack] = await wavelinkcord.YouTubeMusicTrack.search(song_name)
+                query: wavelinkcord.YouTubeTrack = query[0]
                 embed = embeds.playEmbed(query, vc)
-
+            # If it is a spotify track then it searches on spotify
             else:
-                query = await spotify.SpotifyTrack.search(song_name)
+                query: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack(song_name)
+                query: spotify.SpotifyTrack = query[0]
                 embed = embeds.whatsPlayingSpotify(query, vc)
 
+            # Copies the queue to a list
             queue = vc.queue.copy()
             queue = list(queue)
 
+            # Iterates through the queue until it finds the song needed
             for song in queue:
                 if song.uri == query.uri:
                     await vc.play(song)
@@ -111,12 +117,17 @@ class queueCommands(commands.Cog):
                     await interaction.response.send_message(embed=embed)
                     break
             
+            # Clears the track queue and adds the songs back to the queue
             vc.queue.clear()
 
             for song in queue:
                 await vc.queue.put_wait(song)
         
+        # Checks if the user is a dj
         await dj.djCheck(self, interaction, skipto)
-            
+    
+
+
+
 def setup(bot : commands.Bot):
     bot.add_cog(queueCommands(bot))

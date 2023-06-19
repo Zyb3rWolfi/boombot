@@ -1,10 +1,9 @@
 import nextcord
 from nextcord.ext import commands
-import wavelinkcord as wavelink
-from wavelinkcord.ext import spotify
+import wavelink as wavelinkcord
+from wavelink.ext import spotify
 import cogs.embeds as embeds
 import sqlite3
-import random
 from cogs.dj import djCommands as dj
 
 database = sqlite3.connect('database.db')
@@ -29,7 +28,7 @@ class playCommands(commands.Cog):
 
                 if not interaction.guild.voice_client:
 
-                    vc: wavelink.Player = await destination.connect(cls=wavelink.Player)
+                    vc: wavelinkcord.Player = await destination.connect(cls=wavelinkcord.Player)
 
                 else:
 
@@ -38,11 +37,12 @@ class playCommands(commands.Cog):
 
                             await interaction.guild.voice_client.move_to(destination)
                             
-                    vc: wavelink.Player = interaction.guild.voice_client
-                if "https://open.spotify.com/playlist" in search:
+                    vc: wavelinkcord.Player = interaction.guild.voice_client
+                if "https://open.spotify.com/playlist" in search or "https://open.spotify.com/album" in search:
                     print("Playlist Detected")
                     async for track in spotify.SpotifyTrack.iterator(query=search):
                         await vc.queue.put_wait(track)
+                        print("Added to queue")
 
                     if not vc.is_playing():
                         
@@ -52,13 +52,37 @@ class playCommands(commands.Cog):
                     return
                     
                 elif "https://open.spotify.com/track" in search:
+                    query: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(search)
+                    query: spotify.SpotifyTrack = query[0]
 
-                    query = await spotify.SpotifyTrack.search(search)
                     await interaction.response.send_message(f"Now Playing: {query.title}")
                     
                 else:
-                    
-                    query = await wavelink.YouTubeTrack.search(search, return_first=True)
+                    if not "https://www.youtube.com/playlist" in search:
+
+                        query: list[wavelinkcord.YouTubeMusicTrack] = await wavelinkcord.YouTubeMusicTrack.search(search)
+                        query: wavelinkcord.GenericTrack = query[0]
+
+                    else:
+                        print("youtube playlist")
+                        playlist: list[wavelinkcord.YouTubePlaylist] = await wavelinkcord.YouTubePlaylist.search(search)
+                        
+                        tracks = playlist.tracks
+                        for i in tracks:
+                            
+                            query : wavelinkcord.GenericTrack = i
+                            await vc.queue.put_wait(query)
+
+                            if not vc.is_playing():
+                                await vc.play(query)
+                            
+                        await interaction.response.send_message(f"Playlist Added To Queue")
+
+
+                        #for track in playlist.tracks:
+                            #await vc.queue.put_wait(track)
+                        
+                        #print("Added to queue")
                     
                     
                 if vc.queue.is_empty and not vc.is_playing():
@@ -73,39 +97,17 @@ class playCommands(commands.Cog):
                     await interaction.response.send_message(embed=embed)
                     
             except:
+
                 await interaction.response.send_message("Join a VC First!")
 
         await dj.djCheck(self, interaction, play)
-
-    
-    # Skips the current song by stopping it and then "on_wavelink_track_end" starts the next song
-    # Wont skip the song if either the queue is empty or if loop is on
-    @nextcord.slash_command(description="Skip the current song")
-    async def skip(self, interaction : nextcord.Interaction):
-
-        async def skip():
-            vc: wavelink.Player = interaction.guild.voice_client
-            await vc.stop()
-            if not vc.queue.is_empty:
-
-                await vc.stop()
-                await interaction.response.send_message("Song skipped!")
-            
-            elif vc.queue.loop == True:
-
-                await interaction.response.send_message("Turn off looping to skip!")
-            else:
-
-                await interaction.response.send_message("Cant Skip! There is nothing in the Queue")
-
-        await dj.djCheck(self, interaction, skip)
     
     # Disconnects the bot from the VC
     @nextcord.slash_command(description="Disconnects the bot from a VC")
     async def disconnect(self, interaction : nextcord.Interaction):
 
         async def disconnect():
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             await vc.disconnect()
             await interaction.response.send_message("Disconnected the Bot")
 
@@ -117,7 +119,7 @@ class playCommands(commands.Cog):
 
         async def pause():
 
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             try:
                 await vc.pause()
                 await interaction.response.send_message("Paused the current song")
@@ -131,7 +133,7 @@ class playCommands(commands.Cog):
     async def resume(self, interaction : nextcord.Interaction):
 
         async def resume():
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             try:      
                 await vc.resume()
                 await interaction.response.send_message("Resumed the current song")
@@ -144,7 +146,7 @@ class playCommands(commands.Cog):
     @nextcord.slash_command(description="Shows what currently playing")
     async def whatsplaying(self, interaction : nextcord.Interaction):
 
-        vc: wavelink.Player = interaction.guild.voice_client
+        vc: wavelinkcord.Player = interaction.guild.voice_client
         embed = embeds.whatsPlaying(vc)
 
         try:        
@@ -158,7 +160,7 @@ class playCommands(commands.Cog):
         
         async def loop():
 
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             if vc.queue.loop:
                 vc.queue.loop = False
                 print(vc.queue.loop)
@@ -170,11 +172,25 @@ class playCommands(commands.Cog):
 
         await dj.djCheck(self, interaction, loop)
     
+    @nextcord.slash_command(description="Loops the queue")
+    async def queue_loop(self, interaction : nextcord.Interaction):
+
+        vc : wavelinkcord.Player = interaction.guild.voice_client
+        if vc.queue.loop_all:
+
+            vc.queue.loop_all = False
+            await interaction.response.send_message("Queue looping is turned off")
+        
+        else:
+                
+            vc.queue.loop_all = True
+            await interaction.response.send_message("Queue looping is turned on")
+    
     @nextcord.slash_command(description="Replays the current song")
     async def replay(self, interaction : nextcord.Interaction):
 
         async def replay():
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             await vc.play(vc.current)
             await interaction.response.send_message("Replaying the current song")
 
@@ -183,7 +199,7 @@ class playCommands(commands.Cog):
     @nextcord.slash_command(description="Shuffles the songs in the queue")
     async def shuffle(self, interaction : nextcord.Interaction):
 
-        vc : wavelink.Player = interaction.guild.voice_client
+        vc : wavelinkcord.Player = interaction.guild.voice_client
 
         query = "SELECT SHUFFLE FROM guilds WHERE guild_id = ?"
         shuffle_status = cursor.execute(query, (interaction.guild.id,)).fetchone()
@@ -205,14 +221,14 @@ class playCommands(commands.Cog):
     @nextcord.slash_command(description="Seeks a song in seconds")
     async def seek(self, interaction : nextcord.Interaction, seconds : int):
 
-        vc: wavelink.Player = interaction.guild.voice_client
+        vc: wavelinkcord.Player = interaction.guild.voice_client
         await vc.seek(seconds * 1000)
         await interaction.response.send_message(f"Seeked to {seconds} seconds")
     
     @nextcord.slash_command(description="Rewinds a song in seconds")
     async def rewind(self, interaction : nextcord.Interaction, seconds : int):
             
-            vc: wavelink.Player = interaction.guild.voice_client
+            vc: wavelinkcord.Player = interaction.guild.voice_client
             await vc.seek(vc.position - (seconds * 1000))
             await interaction.response.send_message(f"Rewinded {seconds} seconds")
 
